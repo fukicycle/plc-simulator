@@ -1,0 +1,71 @@
+import struct
+import extension
+
+
+class MelsecNetProtocol:
+    def __init__(self):
+        self.device_codes = {b"\x20\x4d": "M", b"\x20\x44": "D", b"\x20\x42": "B"}
+
+    def decode_frame(self, data):
+        if len(data) < 12:
+            print("Recived data is too short for a valid frame.")
+            return None
+
+        request = {
+            "command": None,
+            "command_data": None,
+            "device_type": None,
+            "address": None,
+            "count": None,
+            "values": None,
+        }
+
+        command = data[0:1]
+        pc_num = data[1:2]
+        acpu_monitor_timer = data[2:4]
+        address = data[4:8]
+        device_type = data[8:10]
+        count = data[10:11]
+
+        # extension.print_hex_to_console(command)
+        # extension.print_hex_to_console(pc_num)
+        # extension.print_hex_to_console(acpu_monitor_timer)
+        # extension.print_hex_to_console(address)
+        # extension.print_hex_to_console(device_type)
+        # extension.print_hex_to_console(count)
+
+        if command == b"\x00":
+            request["command"] = "read_bit"
+        elif command == b"\x01":
+            request["command"] = "read_word"
+        else:
+            request["command"] = "not_supported"
+
+        request["command_data"] = command
+        request["address"] = int.from_bytes(address, "little")
+        request["count"] = int.from_bytes(count, "little")
+        request["device_type"] = self.device_codes.get(device_type, "Not Supported")
+
+        return request
+
+    def create_response_frame(self, response_data):
+        status = response_data.get("status")
+        command_data = response_data.get("command_data")
+        response_command_data = (int.from_bytes(command_data, "little") | 0x80).to_bytes(len(command_data), "little")
+        if status == "success":
+            end_code = b"\x00"
+            values = response_data.get("values", [])
+            value_bytes = b''.join([struct.pack('<H', v) for v in values])
+
+            response_frame = response_command_data
+
+            response_frame += end_code
+
+            response_frame += value_bytes
+
+            return response_frame
+        else:
+            error_code = b"\x50"
+            response_frame = response_command_data
+            response_frame += error_code
+            return response_frame
