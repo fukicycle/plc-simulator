@@ -46,8 +46,8 @@ def _finalize(server_threads, result_queue):
 
 if __name__ == "__main__":
     HOST = "172.19.190.101"
-    PORT_START = 3020
-    PORT_END = 3050
+    PORT_START = 3001
+    PORT_END = 3002
 
     server_threads = []
     stop_event = threading.Event()
@@ -67,8 +67,4 @@ if __name__ == "__main__":
 
     print("すべてのPLCが起動しました。")
 
-finalize_thread = threading.Thread(
-    target=_finalize, args=(server_threads, result_queue)
-)
-finalize_thread.start()
-finalize_thread.join()
+_finalize(server_threads, result_queue)
