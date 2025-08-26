@@ -5,9 +5,7 @@ import extension
 
 class PlcServer:
 
-    def __init__(
-        self, host, port, plc_logic, protocol_handler, stop_event, result_queue
-    ):
+    def __init__(self, host, port, plc_logic, protocol_handler, stop_event):
         self.host = host
         self.port = port
         self.plc_logic = plc_logic
@@ -15,7 +13,6 @@ class PlcServer:
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.settimeout(1.0)
         self.stop_event = stop_event
-        self.result_queue = result_queue
         self.server_socket.bind((self.host, self.port))
         self.server_socket.listen(5)
         print(f"PLCサーバが{self.host}:{self.port}で起動しました。")
@@ -58,9 +55,6 @@ class PlcServer:
                     # print(f"送信したデータ: {extension.hex_to_formatted_string(response_frame)}")
                 else:
                     print("無効なリクエストです。")
-            self.result_queue.put(
-                {"port": self.port, "data": self.plc_logic.memory_data}
-            )
         except Exception as e:
             print(f"エラーが発生しました: {e}")
         finally:
