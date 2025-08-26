@@ -62,7 +62,7 @@ if __name__ == "__main__":
 
     # 設定ファイルを読み込む
     settings = list_json_files()
-    
+
     # 設定ファイルを監視するスレッドを立ち上げる
     # TODO　実装書く
 
@@ -96,4 +96,5 @@ if __name__ == "__main__":
     for port in range(PORT_START, PORT_END + 1):
         plc_data = data.get_plc_data(port)
         save_local_data(port, plc_data)
+        print(f"[{port}] 保存しました。")
     print("正常終了しました")
