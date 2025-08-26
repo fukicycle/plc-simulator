@@ -4,7 +4,22 @@ import extension
 
 class MelsecNetProtocol:
     def __init__(self):
-        self.device_codes = {b"\x20\x4d": "M", b"\x20\x44": "D", b"\x20\x42": "B"}
+        self.device_codes = {
+            b"\x20\x4d": "M",  # DIGITAL
+            b"\x20\x44": "D",  # WORD
+            b"\x20\x42": "B",  # DIGITAL
+            b"\x20\x57": "W",  # WORD
+            b"\x20\x58": "X",  # DIGITAL
+            b"\x20\x59": "Y",  # DIGITAL
+        }
+        self.device_types = {
+            "M": "DIGITAL",
+            "D": "WORD",
+            "B": "DIGITAL",
+            "W": "WORD",
+            "X": "DIGITAL",
+            "Y": "DIGITAL",
+        }
 
     def decode_frame(self, data):
         if len(data) < 12:
@@ -15,6 +30,7 @@ class MelsecNetProtocol:
             "command": None,
             "command_data": None,
             "device_type": None,
+            "device_code": None,
             "address": None,
             "count": None,
             "values": None,
@@ -24,7 +40,7 @@ class MelsecNetProtocol:
         pc_num = data[1:2]
         acpu_monitor_timer = data[2:4]
         address = data[4:8]
-        device_type = data[8:10]
+        device_code = data[8:10]
         count = data[10:11]
 
         # extension.print_hex_to_console(command)
@@ -38,24 +54,33 @@ class MelsecNetProtocol:
             request["command"] = "read_bit"
         elif command == b"\x01":
             request["command"] = "read_word"
+        elif command == b"\x02":
+            request["command"] = "write_bit"
+        elif command == b"\x03":
+            request["command"] = "write_word"
         else:
             request["command"] = "not_supported"
 
         request["command_data"] = command
         request["address"] = int.from_bytes(address, "little")
         request["count"] = int.from_bytes(count, "little")
-        request["device_type"] = self.device_codes.get(device_type, "Not Supported")
+        request["device_code"] = self.device_codes.get(device_code, "Not Supported")
+        request["device_type"] = self.device_types.get(
+            request["device_code"], "Not Supported"
+        )
 
         return request
 
     def create_response_frame(self, response_data):
         status = response_data.get("status")
         command_data = response_data.get("command_data")
-        response_command_data = (int.from_bytes(command_data, "little") | 0x80).to_bytes(len(command_data), "little")
+        response_command_data = (
+            int.from_bytes(command_data, "little") | 0x80
+        ).to_bytes(len(command_data), "little")
         if status == "success":
             end_code = b"\x00"
             values = response_data.get("values", [])
-            value_bytes = b''.join([struct.pack('<H', v) for v in values])
+            value_bytes = b"".join([struct.pack("<H", v) for v in values])
 
             response_frame = response_command_data
 
