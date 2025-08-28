@@ -20,6 +20,7 @@ class MelsecNetProtocol:
             "X": "DIGITAL",
             "Y": "DIGITAL",
         }
+        self.base_numbers = {"M": 10, "D": 10, "B": 16, "W": 16, "X": 16, "Y": 16}
 
     def decode_frame(self, data):
         if len(data) < 12:
@@ -34,6 +35,7 @@ class MelsecNetProtocol:
             "address": None,
             "count": None,
             "values": None,
+            "base_number": None,
         }
 
         command = data[0:1]
@@ -64,10 +66,9 @@ class MelsecNetProtocol:
         request["command_data"] = command
         request["address"] = int.from_bytes(address, "little")
         request["count"] = int.from_bytes(count, "little")
-        request["device_code"] = self.device_codes.get(device_code, "Not Supported")
-        request["device_type"] = self.device_types.get(
-            request["device_code"], "Not Supported"
-        )
+        request["device_code"] = self.device_codes.get(device_code, None)
+        request["device_type"] = self.device_types.get(request["device_code"], None)
+        request["base_number"] = self.base_numbers.get(request["device_code"], None)
 
         return request
 
